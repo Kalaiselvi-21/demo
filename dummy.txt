@@ -1,1 +1,193 @@
-Dummy file only
+https://chatgpt.com/share/6903a070-9ec4-800f-bb03-2c80bb172ca5
+https://chatgpt.com/share/69036a9f-4698-800f-ad33-f89e62c11e22
+1. Constructors in Scala
+
+In Scala, there are two types of constructors:
+
+Primary constructor
+
+Auxiliary constructor (secondary)
+
+
+
+---
+
+🔹 Primary Constructor
+
+The class parameters themselves act as the primary constructor.
+
+class Student(name: String, age: Int) {
+  def display(): Unit = {
+    println(s"Name: $name, Age: $age")
+  }
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val s = new Student("Kalai", 21)
+    s.display()
+  }
+}
+
+🧠 The constructor parameters (name, age) are automatically part of the primary constructor.
+
+
+---
+
+🔹 Auxiliary Constructor
+
+You can define additional constructors using def this(...).
+
+class Student(name: String, age: Int) {
+  def this(name: String) = {
+    this(name, 18)  // calls primary constructor
+  }
+
+  def show() = println(s"$name, $age")
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val s1 = new Student("Kalai", 21)
+    val s2 = new Student("Sahana") // uses auxiliary
+    s1.show()
+    s2.show()
+  }
+}
+
+
+---
+
+🧍 2. Singleton Objects
+
+Scala does not have “static” members like Java.
+Instead, it uses singleton objects — objects that have only one instance in the entire program.
+
+
+---
+
+🔹 Example
+
+object College {
+  def showCollege(): Unit = {
+    println("Welcome to ABC College")
+  }
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    College.showCollege()  // directly call using object name
+  }
+}
+
+🧠 Here, College is a singleton object — you don’t need new to access it.
+
+
+---
+
+🔄 3. Companion Objects
+
+A companion object is an object that has the same name as a class.
+It can access private members of that class.
+
+
+---
+
+🔹 Example
+
+class Student(private val name: String, private val age: Int) {
+  def display() = println(s"$name is $age years old.")
+}
+
+object Student {  // companion object
+  def createStudent(n: String, a: Int): Student = new Student(n, a)
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val s = Student.createStudent("Kalai", 21)
+    s.display()
+  }
+}
+
+🧠 class Student and object Student are companions — they share access to private data.
+
+
+---
+
+🧵 4. Threads in Scala
+
+Scala uses Java’s thread support via the Thread class or Runnable interface.
+
+
+---
+
+🔹 Method 1: Extending Thread Class
+
+class MyThread extends Thread {
+  override def run(): Unit = {
+    for (i <- 1 to 5)
+      println(s"Thread running: $i")
+  }
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val t1 = new MyThread()
+    t1.start()
+  }
+}
+
+
+---
+
+🔹 Method 2: Implementing Runnable
+
+class MyRunnable extends Runnable {
+  def run(): Unit = {
+    for (i <- 1 to 5)
+      println(s"Runnable thread: $i")
+  }
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val r = new MyRunnable()
+    val t = new Thread(r)
+    t.start()
+  }
+}
+
+🧠 start() → creates a new thread
+run() → defines what the thread executes.
+
+
+---
+
+🧩 5. Abstract Classes
+
+An abstract class is a class that cannot be instantiated and can have both abstract and concrete methods.
+
+
+---
+
+🔹 Example
+
+abstract class Animal {
+  def sound(): Unit   // abstract method
+  def sleep(): Unit = println("Sleeping...") // concrete method
+}
+
+class Dog extends Animal {
+  def sound(): Unit = println("Bark!")
+}
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val d = new Dog()
+    d.sound()
+    d.sleep()
+  }
+}
+
+🧠 abstract keyword means the class must be extended before use.
