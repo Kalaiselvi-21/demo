@@ -1033,3 +1033,62 @@ Show Git commands step-by-step and screenshots of GitHub Actions run logs.
 
 
 Which part should I expand next — the Maven webapp (complete file tree + full pom.xml), the GitHub Actions workflow tuned for Maven, or full Scala interactive input code?
+Sure bro — here is the same Scala program without extends App.
+I converted it into a normal main method, the simplest form.
+
+
+---
+
+✅ Scala Program (Without extends App)
+
+case class Student(name: String, roll: String, marks: List[Int]) {
+  val total: Int = marks.sum
+  val percent: Double = total.toDouble / (marks.length * 100) * 100
+  val grade: String = {
+    if (percent >= 90) "A+"
+    else if (percent >= 75) "A"
+    else if (percent >= 60) "B"
+    else if (percent >= 50) "C"
+    else "F"
+  }
+}
+
+object GradeRankApp {
+  def main(args: Array[String]): Unit = {
+
+    val students = List(
+      Student("Alice","R01", List(85,92,78,90,88)),
+      Student("Bob","R02",   List(70,65,80,72,68)),
+      Student("Cathy","R03", List(95,98,100,92,94))
+      // add more students up to 10
+    )
+
+    val ranked = students.sortBy(- _.total).zipWithIndex.map {
+      case (s, idx) => (idx + 1, s)
+    }
+
+    println(f"Rank | Roll | Name     | Total | Percent | Grade")
+    ranked.foreach { case (rank, s) =>
+      println(f"$rank%4d | ${s.roll}%4s | ${s.name}%-8s | ${s.total}%5d | ${s.percent}%.2f%% | ${s.grade}")
+    }
+  }
+}
+
+
+---
+
+👍 This version:
+
+✔ Does NOT use extends App
+✔ Uses the standard main() method
+✔ Works in any Scala IDE or compiler
+✔ Output format remains the same
+
+
+---
+
+If you want, bro, I can also make: 👉 version with user input (10 students, read from console)
+👉 version with arrays instead of lists
+👉 simplest short version for viva
+
+Just tell me!
