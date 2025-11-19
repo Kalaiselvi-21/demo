@@ -1,1 +1,51 @@
-Again Created test1.txt file
+sudo apt install bind9 bind9utils bind9-doc -y
+sudo systemctl start bind9     
+sudo systemctl enable bind9
+sudo nano /etc/bind/named.conf.local
+zone "example.com" {
+    type master;
+    file "/etc/bind/zones/db.example.com";  # path to forward zone file
+};
+sudo mkdir /etc/bind/zones
+sudo nano /etc/bind/zones/db.example.com
+$TTL 86400
+@   IN  SOA ns1.example.com. admin.example.com. (
+        2025111901 ; Serial YYYYMMDDNN
+        3600       ; Refresh
+        1800       ; Retry
+        604800     ; Expire
+        86400 )    ; Minimum TTL
+
+; Nameservers
+@   IN  NS  ns1.example.com.
+
+; IP addresses for hosts
+ns1 IN  A   192.168.1.10
+www IN  A   192.168.1.20
+sudo nano /etc/bind/named.conf.local
+zone "1.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/db.192.168.1";
+};
+sudo nano /etc/bind/zones/db.192.168.1
+$TTL 86400
+@   IN  SOA ns1.example.com. admin.example.com. (
+        2025111901 ; Serial
+        3600
+        1800
+        604800
+        86400 )
+
+; Nameserver
+@   IN  NS  ns1.example.com.
+
+; PTR Records
+10  IN  PTR ns1.example.com.
+20  IN  PTR www.example.com
+sudo named-checkconf           
+sudo named-checkzone example.com /etc/bind/zones/db.example.com
+sudo named-checkzone 1.168.192.in-addr.arpa /etc/bind/zones/db.192.168.1
+sudo systemctl restart bind9 
+dig @localhost www.example.com
+dig @localhost -x 192.168.1.20
+
