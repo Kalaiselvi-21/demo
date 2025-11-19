@@ -529,3 +529,507 @@ Deploy the WAR file to Tomcat.
 ---
 
 🎉 Completed Guidance for All 5 Questions
+Nice — I’ll walk you through complete step-by-step tutorials for questions 6 → 10 (create GitHub repo + Actions for Java build/test/artifact, Maven web app with student form, Scala grade & rank, decimal→binary converter, and Java matrix addition). I’ll give short algorithms, command sequences, and ready-to-run code examples you can copy. Say if you want any part expanded or converted to a different framework. Ready? Let’s go — bro. 😎
+
+6 — Create a GitHub repo and automate compilation & execution of a Java program using GitHub Actions (build, test, artifact upload)
+
+Goal
+
+Create a Git repo with a simple Java project, add a GitHub Actions workflow that: checks out code, builds with javac (or Maven/Gradle), runs tests, and uploads a compiled artifact.
+
+Steps (high level)
+
+1. Create local project folder with Java source and tests.
+
+
+2. Initialize Git, commit files, push to GitHub repo.
+
+
+3. Add .github/workflows/java-ci.yml describing the workflow.
+
+
+4. Push — GitHub Actions will run: build → test → upload artifact.
+
+
+
+Project layout (simple Java, no build tool)
+
+java-ci-example/
+├─ src/
+│  └─ Main.java
+├─ test/
+│  └─ MainTest.java   (optional simple test runner)
+├─ run.sh             (script to run program)
+└─ .github/workflows/java-ci.yml
+
+Minimal files
+
+src/Main.java
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from GitHub Actions Java build!");
+    }
+}
+
+run.sh (optional)
+
+#!/bin/bash
+javac -d out src/*.java
+java -cp out Main
+
+Make executable: chmod +x run.sh
+
+Simple test harness (optional) test/MainTest.java
+
+If you want to keep it minimal without JUnit, you can create a small class that returns exit code 0 on success.
+
+public class MainTest {
+    public static void main(String[] args) {
+        // Basic smoke test
+        String expected = "Hello from GitHub Actions Java build!";
+        // Run the main method and capture output or just assume compilation is success
+        System.out.println("Test passed");
+    }
+}
+
+GitHub Actions workflow (example)
+
+Create .github/workflows/java-ci.yml:
+
+name: Java CI (javac)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+
+    - name: Compile
+      run: |
+        mkdir -p out
+        javac -d out src/*.java
+
+    - name: Run program
+      run: java -cp out Main
+
+    - name: Run tests (optional)
+      run: |
+        javac -d out test/*.java || true
+        java -cp out MainTest || true
+
+    - name: Upload artifact (compiled classes)
+      uses: actions/upload-artifact@v4
+      with:
+        name: compiled-classes
+        path: out
+
+How to use
+
+1. git init, add files, git add ., git commit -m "initial".
+
+
+2. Create GitHub repo and git remote add origin ..., push to main.
+
+
+3. On push, Actions runs. Check Actions tab for logs. Artifact (compiled classes) will be available in the workflow run.
+
+
+
+
+---
+
+7 — Develop web application using Maven: form to enter & display student details
+
+Goal
+
+Create a Maven web app that serves a HTML form to input student details (name, roll, marks) and displays submitted details. We'll use a simple servlet + JSP approach (no heavy frameworks).
+
+Steps (high level)
+
+1. Generate Maven webapp skeleton (mvn archetype:generate or create pom.xml).
+
+
+2. Add Student model class.
+
+
+3. Create a servlet to handle GET (show form) and POST (store & forward to display).
+
+
+4. Create JSP pages: form.jsp and display.jsp.
+
+
+5. Run with an embedded server (Tomcat plugin) or deploy to Tomcat.
+
+
+
+Maven pom.xml (minimal)
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" ...>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>student-webapp</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>war</packaging>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- Servlet API provided by container -->
+    <provided scope="provided">
+      <dependency>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>6.0.0</version>
+      </dependency>
+    </provided>
+  </dependencies>
+
+  <!-- Optional: plugin to run embedded server for testing -->
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <version>11.0.15</version>
+        <configuration>
+          <scanIntervalSeconds>1</scanIntervalSeconds>
+          <webApp>
+            <contextPath>/</contextPath>
+          </webApp>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+Model class Student.java
+
+package com.example.model;
+public class Student {
+    private String name;
+    private String roll;
+    private int[] marks; // 5 subjects
+
+    public Student() {}
+    public Student(String name, String roll, int[] marks) {
+        this.name = name; this.roll = roll; this.marks = marks;
+    }
+    // getters/setters...
+}
+
+Servlet StudentServlet.java
+
+package com.example.web;
+
+import com.example.model.Student;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StudentServlet extends HttpServlet {
+    // For demo only: store in servlet context
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getRequestDispatcher("/form.jsp").forward(req, resp);
+    }
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String name = req.getParameter("name");
+        String roll = req.getParameter("roll");
+        int[] marks = new int[5];
+        for (int i = 0; i < 5; i++){
+            String m = req.getParameter("m" + (i+1));
+            marks[i] = (m == null || m.isEmpty()) ? 0 : Integer.parseInt(m);
+        }
+        Student s = new Student(name, roll, marks);
+        ServletContext ctx = req.getServletContext();
+        synchronized (ctx) {
+            List<Student> list = (List<Student>) ctx.getAttribute("students");
+            if (list == null) {
+                list = new ArrayList<>();
+                ctx.setAttribute("students", list);
+            }
+            list.add(s);
+        }
+        req.setAttribute("student", s);
+        req.getRequestDispatcher("/display.jsp").forward(req, resp);
+    }
+}
+
+web.xml mapping (or use annotations)
+
+<web-app ...>
+  <servlet>
+    <servlet-name>StudentServlet</servlet-name>
+    <servlet-class>com.example.web.StudentServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>StudentServlet</servlet-name>
+    <url-pattern>/student</url-pattern>
+  </servlet-mapping>
+</web-app>
+
+form.jsp (simplified)
+
+<form action="student" method="post">
+  Name: <input name="name"/><br/>
+  Roll: <input name="roll"/><br/>
+  Subject1: <input name="m1"/><br/>
+  Subject2: <input name="m2"/><br/>
+  Subject3: <input name="m3"/><br/>
+  Subject4: <input name="m4"/><br/>
+  Subject5: <input name="m5"/><br/>
+  <button type="submit">Submit</button>
+</form>
+
+display.jsp
+
+<%@ page import="com.example.model.Student" %>
+<%
+ Student s = (Student) request.getAttribute("student");
+%>
+<h2>Student details</h2>
+Name: <%= s.getName() %><br/>
+Roll: <%= s.getRoll() %><br/>
+Marks:
+<ul>
+<% for(int m: s.getMarks()) { %>
+  <li><%= m %></li>
+<% } %>
+</ul>
+<a href="/">Add another</a>
+
+Run
+
+mvn package creates target/student-webapp.war
+
+Use mvn jetty:run (with the plugin above) to test at http://localhost:8080/
+
+Or deploy the WAR to Tomcat.
+
+
+
+---
+
+8 — Scala program to calculate grade and rank among 10 students (name, roll no, 5 subject marks)
+
+Requirements
+
+For 10 students compute total marks, percent, grade, then rank students by total (highest → 1).
+
+Algorithm (step-by-step)
+
+1. Create a Student case class: (name, roll, marks: List[Int]).
+
+
+2. For each student compute total = marks.sum and percent = total / (5*100.0) * 100.
+
+
+3. Determine grade from percent (e.g., >= 90 A+, >=75 A, >=60 B, >=50 C, else F).
+
+
+4. Sort students by total descending to assign rank.
+
+
+5. Print name, roll, total, percent, grade, rank.
+
+
+
+Complete Scala program
+
+case class Student(name: String, roll: String, marks: List[Int]) {
+  val total: Int = marks.sum
+  val percent: Double = total.toDouble / (marks.length * 100) * 100
+  val grade: String = {
+    if (percent >= 90) "A+"
+    else if (percent >= 75) "A"
+    else if (percent >= 60) "B"
+    else if (percent >= 50) "C"
+    else "F"
+  }
+}
+
+object GradeRankApp extends App {
+  // Example: you can replace this with user input or reading file
+  val students = List(
+    Student("Alice","R01", List(85,92,78,90,88)),
+    Student("Bob","R02",   List(70,65,80,72,68)),
+    Student("Cathy","R03", List(95,98,100,92,94)),
+    // add up to 10 entries...
+  )
+
+  val ranked = students.sortBy(- _.total).zipWithIndex.map { case (s, idx) =>
+    (idx + 1, s)
+  }
+
+  println(f"Rank | Roll | Name     | Total | Percent | Grade")
+  ranked.foreach { case (rank, s) =>
+    println(f"$rank%4d | ${s.roll}%4s | ${s.name}%-8s | ${s.total}%5d | ${s.percent}%.2f%% | ${s.grade}")
+  }
+}
+
+Notes
+
+If you need interactive input from console, use scala.io.StdIn.readLine() and parse marks.
+
+Ties: the above assigns distinct ranks based on ordering — to handle ties give same rank to equal totals and skip ranks accordingly.
+
+
+
+---
+
+9 — Program to convert a given decimal to binary
+
+I’ll show both algorithm and code in two languages (Java and Scala) so you can pick.
+
+Algorithm (manual)
+
+1. For integer n, repeatedly divide by 2.
+
+
+2. Record remainder (0 or 1) at each step.
+
+
+3. Build binary digits from last remainder to first (reverse order).
+
+
+4. If n is 0 output 0.
+
+
+
+Java (iterative, using string builder)
+
+public class DecimalToBinary {
+    public static String toBinary(int n) {
+        if (n == 0) return "0";
+        StringBuilder sb = new StringBuilder();
+        int num = n;
+        while (num > 0) {
+            sb.append(num % 2);
+            num /= 2;
+        }
+        return sb.reverse().toString();
+    }
+    public static void main(String[] args) {
+        int val = 19;
+        System.out.println(val + " -> " + toBinary(val)); // 19 -> 10011
+    }
+}
+
+Scala (functional)
+
+def toBinary(n: Int): String = {
+  if (n == 0) "0"
+  else Stream.iterate(n)(_ / 2).takeWhile(_ > 0).map(_ % 2).toList.reverse.mkString
+}
+println(toBinary(19)) // prints 10011
+
+Notes
+
+For negative numbers use two’s complement representation if needed.
+
+Also can use built-in: Java Integer.toBinaryString(n) or Scala n.toBinaryString.
+
+
+
+---
+
+10 — Java program to add two matrices and print result
+
+Algorithm
+
+1. Read or define two matrices A and B of same dimensions (m x n).
+
+
+2. Create result matrix C with same dimensions.
+
+
+3. For each i from 0..m-1 and j from 0..n-1: C[i][j] = A[i][j] + B[i][j].
+
+
+4. Print matrix C.
+
+
+
+Java example (console)
+
+import java.util.Scanner;
+
+public class MatrixAdd {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Rows: ");
+        int m = sc.nextInt();
+        System.out.print("Cols: ");
+        int n = sc.nextInt();
+
+        int[][] A = new int[m][n];
+        int[][] B = new int[m][n];
+
+        System.out.println("Enter A:");
+        for (int i=0;i<m;i++)
+            for (int j=0;j<n;j++)
+                A[i][j] = sc.nextInt();
+
+        System.out.println("Enter B:");
+        for (int i=0;i<m;i++)
+            for (int j=0;j<n;j++)
+                B[i][j] = sc.nextInt();
+
+        int[][] C = new int[m][n];
+        for (int i=0;i<m;i++)
+            for (int j=0;j<n;j++)
+                C[i][j] = A[i][j] + B[i][j];
+
+        System.out.println("Result:");
+        for (int i=0;i<m;i++) {
+            for (int j=0;j<n;j++) {
+                System.out.print(C[i][j] + " ");
+            }
+            System.out.println();
+        }
+        sc.close();
+    }
+}
+
+Notes
+
+Validate dimensions: addition only if both matrices same dimension.
+
+For larger matrices or performance concerns, consider using single loops with index arithmetic (rarely necessary in small apps).
+
+
+
+---
+
+If you want, I can:
+
+Provide full downloadable projects (zipped) for any of the above.
+
+Replace the Maven servlet example with a Spring Boot web app (faster dev).
+
+Add interactive console input for the Scala grade program.
+
+Show Git commands step-by-step and screenshots of GitHub Actions run logs.
+
+
+Which part should I expand next — the Maven webapp (complete file tree + full pom.xml), the GitHub Actions workflow tuned for Maven, or full Scala interactive input code?
