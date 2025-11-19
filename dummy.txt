@@ -191,3 +191,341 @@ object Main {
 }
 
 🧠 abstract keyword means the class must be extended before use.
+Alright bro 🔥🔥
+Here is FULL, COMPLETE, ALL-IN-ONE GUIDANCE for all five shuffled questions — with explanations, steps, examples, diagrams, and final output expectations.
+
+
+---
+
+✅ 1. Install and configure ANY 5 plugins in Maven
+
+Here are five commonly used Maven plugins and how to configure them in pom.xml.
+
+
+---
+
+(1) Maven Compiler Plugin
+
+→ Used to set Java version.
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.11.0</version>
+    <configuration>
+        <source>17</source>
+        <target>17</target>
+    </configuration>
+</plugin>
+
+
+---
+
+(2) Maven Surefire Plugin
+
+→ Used for running unit tests.
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.2.3</version>
+</plugin>
+
+
+---
+
+(3) Maven Clean Plugin
+
+→ Deletes target/ directory before new build.
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-clean-plugin</artifactId>
+    <version>3.2.0</version>
+</plugin>
+
+
+---
+
+(4) Maven Jar Plugin
+
+→ Used for building .jar files.
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-jar-plugin</artifactId>
+    <version>3.3.0</version>
+</plugin>
+
+
+---
+
+(5) Maven Shade Plugin
+
+→ Creates executable fat JAR with dependencies.
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <version>3.5.1</version>
+    <executions>
+        <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+        </execution>
+    </executions>
+</plugin>
+
+
+---
+
+✅ 2. Scala Program – Employee Payroll Using Classes & Objects
+
+Requirements
+
+✔ Class Employee
+✔ Attributes: name, id, basicSalary
+✔ Methods: calculateAllowance(), calculateGross(), display()
+
+
+---
+
+Scala Program
+
+class Employee(val name: String, val id: Int, val basic: Double) {
+
+  def allowance(): Double = basic * 0.20  // 20% allowance
+
+  def grossSalary(): Double = basic + allowance()
+
+  def display(): Unit = {
+    println(s"Employee Name: $name")
+    println(s"Employee ID: $id")
+    println(s"Basic Salary: $basic")
+    println(s"Allowance: ${allowance()}")
+    println(s"Gross Salary: ${grossSalary()}")
+  }
+}
+
+object PayrollMain {
+  def main(args: Array[String]): Unit = {
+    val emp = new Employee("Kalai", 101, 30000)
+    emp.display()
+  }
+}
+
+
+---
+
+✅ 3. Maven-based Online Shopping Cart Project
+
+A full Maven project with modules:
+
+Modules to implement
+
+✔ Add item
+✔ Remove item
+✔ Display items
+✔ Calculate GST + total bill
+
+
+---
+
+Step 1: Create Maven project
+
+mvn archetype:generate -DgroupId=com.cart -DartifactId=ShoppingCart -DarchetypeArtifactId=maven-archetype-quickstart
+
+
+---
+
+Step 2: Create Item Class
+
+public class Item {
+    String name;
+    double price;
+
+    public Item(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+}
+
+
+---
+
+Step 3: Shopping Cart Module
+
+import java.util.*;
+
+public class Cart {
+    List<Item> items = new ArrayList<>();
+
+    public void addItem(String name, double price) {
+        items.add(new Item(name, price));
+        System.out.println("Added: " + name);
+    }
+
+    public void removeItem(String name) {
+        items.removeIf(i -> i.name.equals(name));
+        System.out.println("Removed: " + name);
+    }
+
+    public void display() {
+        items.forEach(i -> System.out.println(i.name + " - Rs." + i.price));
+    }
+
+    public double calculateTotalWithGST() {
+        double total = items.stream().mapToDouble(i -> i.price).sum();
+        return total + (total * 0.18); // 18% GST
+    }
+}
+
+
+---
+
+Step 4: Main Program
+
+public class Main {
+    public static void main(String[] args) {
+        Cart c = new Cart();
+        c.addItem("Book", 200);
+        c.addItem("Pen", 10);
+        c.display();
+        System.out.println("Final Amount: " + c.calculateTotalWithGST());
+    }
+}
+
+
+---
+
+✅ 4. Create GitHub Repo + Configure CI/CD Using GitHub Actions
+
+Step-by-step guide
+
+
+---
+
+Step 1: Create GitHub Repo (CMD)
+
+echo "# shopping-app" >> README.md
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/kalai/shopping-app.git
+git push -u origin main
+
+
+---
+
+Step 2: Create GitHub Actions Workflow
+
+Create folder:
+
+.github/workflows/build.yml
+
+File:
+
+name: Maven Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+
+✔ Automatically compiles your project
+✔ Tests run every push
+✔ Ensures CI/CD pipeline
+
+
+---
+
+✅ 5. Develop Web Application for Game Development Using Maven
+
+You will build
+
+✔ A simple web app
+✔ Using Maven + Java + Servlet + HTML
+
+
+---
+
+Step 1: Create Maven Web Project
+
+mvn archetype:generate -DgroupId=com.game -DartifactId=GameApp -DarchetypeArtifactId=maven-archetype-webapp
+
+
+---
+
+Step 2: Add Servlet Dependencies (pom.xml)
+
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>4.0.1</version>
+    <scope>provided</scope>
+</dependency>
+
+
+---
+
+Step 3: Create a Game Servlet
+
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+
+public class GameServlet extends HttpServlet {
+    public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        res.setContentType("text/html");
+        PrintWriter out = res.getWriter();
+        out.println("<h1>Welcome to Mini Game App</h1>");
+        out.println("<p>Click to start playing!</p>");
+    }
+}
+
+
+---
+
+Step 4: Configure web.xml
+
+<servlet>
+    <servlet-name>game</servlet-name>
+    <servlet-class>GameServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>game</servlet-name>
+    <url-pattern>/play</url-pattern>
+</servlet-mapping>
+
+
+---
+
+Step 5: Run using Tomcat
+
+mvn clean package
+
+Deploy the WAR file to Tomcat.
+
+
+---
+
+🎉 Completed Guidance for All 5 Questions
