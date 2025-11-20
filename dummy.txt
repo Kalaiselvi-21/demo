@@ -1,51 +1,196 @@
-sudo apt install bind9 bind9utils bind9-doc -y
-sudo systemctl start bind9     
-sudo systemctl enable bind9
-sudo nano /etc/bind/named.conf.local
-zone "example.com" {
-    type master;
-    file "/etc/bind/zones/db.example.com";  # path to forward zone file
-};
-sudo mkdir /etc/bind/zones
-sudo nano /etc/bind/zones/db.example.com
-$TTL 86400
-@   IN  SOA ns1.example.com. admin.example.com. (
-        2025111901 ; Serial YYYYMMDDNN
-        3600       ; Refresh
-        1800       ; Retry
-        604800     ; Expire
-        86400 )    ; Minimum TTL
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-; Nameservers
-@   IN  NS  ns1.example.com.
+class ChatServer {
+    static Set<PrintWriter> clients = new HashSet<>();
 
-; IP addresses for hosts
-ns1 IN  A   192.168.1.10
-www IN  A   192.168.1.20
-sudo nano /etc/bind/named.conf.local
-zone "1.168.192.in-addr.arpa" {
-    type master;
-    file "/etc/bind/zones/db.192.168.1";
-};
-sudo nano /etc/bind/zones/db.192.168.1
-$TTL 86400
-@   IN  SOA ns1.example.com. admin.example.com. (
-        2025111901 ; Serial
-        3600
-        1800
-        604800
-        86400 )
+    public static void main(String[] args) throws Exception {
+        ServerSocket ss = new ServerSocket(5000);
+        System.out.println("Server started...");
+        while (true) {
+            Socket s = ss.accept();
+            PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+            clients.add(out);
+            new Thread(() -> handleClient(s, out)).start();
+        }
+    }
 
-; Nameserver
-@   IN  NS  ns1.example.com.
+    static void handleClient(Socket s, PrintWriter out) {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            String name = in.readLine();
+            broadcast(name + " joined the chat");
+            String msg;
+            while ((msg = in.readLine()) != null) {
+                if (msg.equalsIgnoreCase("/quit")) break;
+                broadcast(name + ": " + msg);
+            }
+        } catch (Exception ignored) {}
+        finally { clients.remove(out); broadcast("A user left."); }
+    }
 
-; PTR Records
-10  IN  PTR ns1.example.com.
-20  IN  PTR www.example.com
-sudo named-checkconf           
-sudo named-checkzone example.com /etc/bind/zones/db.example.com
-sudo named-checkzone 1.168.192.in-addr.arpa /etc/bind/zones/db.192.168.1
-sudo systemctl restart bind9 
-dig @localhost www.example.com
-dig @localhost -x 192.168.1.20
+    static void broadcast(String msg) {
+        for (PrintWriter c : clients) c.println(msg);
+        System.out.println(msg);
+    }
+}
+import java.io.*;
+import java.net.*;
 
+class ChatClient {
+    public static void main(String[] args) throws Exception {
+        Socket s = new Socket("localhost", 5000);
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+        BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
+
+        System.out.print("Enter your name: ");
+        out.println(kb.readLine());
+        new Thread(() -> {
+            try { String line; while ((line = in.readLine()) != null) System.out.println(line); }
+            catch (Exception ignored) {}
+        }).start();
+
+        String msg;
+        while ((msg = kb.readLine()) != null) {
+            out.println(msg);
+            if (msg.equalsIgnoreCase("/quit")) break;
+        }
+        s.close();
+    }
+}
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class FileDownloader {
+    public static void main(String[] args) throws Exception {
+        String downloadUrl = "http://localhost:8000/download";
+        HttpURLConnection connection = (HttpURLConnection) new URL(downloadUrl).openConnection();
+
+        connection.setRequestMethod("GET");
+
+        try (InputStream in = connection.getInputStream();
+             FileOutputStream out = new FileOutputStream("downloaded.txt")) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        }
+
+        System.out.println("File downloaded successfully!");
+    }
+}
+import com.sun.net.httpserver.*;
+import java.io.*;
+import java.net.*;
+
+public class FileServer {
+
+    private static final String UPLOAD_DIR = "uploads";
+
+    public static void main(String[] args) throws Exception {
+        File uploadDir = new File(UPLOAD_DIR);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdir();
+        }
+
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        System.out.println("Server started at http://localhost:8000");
+
+        server.createContext("/upload", new UploadHandler());
+        server.createContext("/download", new DownloadHandler());
+
+        server.setExecutor(null);
+        server.start();
+    }
+
+    // Handler for uploading files
+    static class UploadHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("POST".equals(exchange.getRequestMethod())) {
+                // Read file data
+                InputStream input = exchange.getRequestBody();
+                FileOutputStream fos = new FileOutputStream(UPLOAD_DIR + "/uploaded_file.txt");
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = input.read(buffer)) != -1) {
+                    fos.write(buffer, bytesRead, bytesRead);
+                }
+                fos.close();
+
+                String response = "File uploaded successfully!";
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();}
+            // } else {
+            //     String htmlForm = "<form method='POST' enctype='multipart/form-data' action='/upload'>" +
+            //             "<input type='file' name='file'><br><input type='submit' value='Upload'>" +
+            //             "</form>";
+            //     exchange.sendResponseHeaders(200, htmlForm.length());
+            //     OutputStream os = exchange.getResponseBody();
+            //     os.write(htmlForm.getBytes());
+            //     os.close();
+            // }
+        }
+    }
+
+    // Handler for downloading files
+    static class DownloadHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            File file = new File(UPLOAD_DIR + "/uploaded_file.txt");
+            if (file.exists()) {
+                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=download.txt");
+                exchange.sendResponseHeaders(200, file.length());
+
+                OutputStream os = exchange.getResponseBody();
+                FileInputStream fis = new FileInputStream(file);
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                fis.close();
+                os.close();}
+            // } else {
+            //     String response = "No file found!";
+            //     exchange.sendResponseHeaders(404, response.length());
+            //     OutputStream os = exchange.getResponseBody();
+            //     os.write(response.getBytes());
+            //     os.close();
+            // }
+        }
+    }
+}
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class FileUploader {
+    public static void main(String[] args) throws Exception {
+        File file = new File("test.txt");  // file to upload
+        String uploadUrl = "http://localhost:8000/upload";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(uploadUrl).openConnection();
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/octet-stream");
+
+        try (OutputStream os = connection.getOutputStream();
+             FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }
+
+        int responseCode = connection.getResponseCode();
+        System.out.println("Upload Response: " + responseCode);
+    }
+}
