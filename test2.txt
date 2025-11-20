@@ -1,1 +1,122 @@
-Kalaiselvi is learning github 
+ # Create simulator
+set ns [new Simulator]
+
+# Open trace and nam files
+set tf [open stopwait.tr w]
+$ns trace-all $tf
+set nf [open stopwait.nam w]
+$ns namtrace-all $nf
+
+# Create nodes
+set n0 [$ns node]
+set n1 [$ns node]
+
+# Connect nodes with a duplex link
+$ns duplex-link $n0 $n1 1Mb 10ms DropTail
+
+# Create TCP agent (Stop and Wait can be modeled as TCP with window = 1)
+set tcp [new Agent/TCP]
+$tcp set window_ 1
+$ns attach-agent $n0 $tcp
+
+# Create TCP sink at receiver side
+set sink [new Agent/TCPSink]
+$ns attach-agent $n1 $sink
+$ns connect $tcp $sink
+
+# Attach an FTP application to TCP
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+
+# Start and stop simulation
+$ns at 0.5 "$ftp start"
+$ns at 5.0 "finish"
+
+# Finish procedure
+proc finish {} {
+    global ns tf nf
+    $ns flush-trace
+    close $tf
+    close $nf
+    exec nam stopwait.nam &
+    exit 0
+}
+
+# Run simulation
+$ns run
+# Create simulator
+set ns [new Simulator]
+
+# Open trace and NAM files
+set tf [open selective_repeat.tr w]
+$ns trace-all $tf
+set nf [open selective_repeat.nam w]
+$ns namtrace-all $nf
+
+# Create two nodes
+set n0 [$ns node]
+set n1 [$ns node]
+
+# Connect nodes (duplex link)
+$ns duplex-link $n0 $n1 1Mb 10ms DropTail
+
+# Create TCP agent
+# For Selective Repeat, we simulate it using TCP with selective acknowledgment (SACK) enabled
+set tcp [new Agent/TCP/Newreno]
+$tcp set window_ 4
+$tcp set maxcwnd_ 4
+$tcp set tcp_sack_ true
+$ns attach-agent $n0 $tcp
+
+# Create TCP sink
+set sink [new Agent/TCPSink/Sack1]
+$ns attach-agent $n1 $sink
+$ns connect $tcp $sink
+
+# Create FTP application
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+
+# Schedule start and finish
+$ns at 0.5 "$ftp start"
+$ns at 5.0 "finish"
+
+# Define finish procedure
+proc finish {} {
+    global ns tf nf
+    $ns flush-trace
+    close $tf
+    close $nf
+    exec nam selective_repeat.nam &
+    exit 0
+}
+
+# Run simulation
+$ns run
+set ns [new Simulator]
+set tf [ open goback.tr w]
+$ns trace-all $tf
+set nf [open goback.nam w]
+$ns namtrace-all $nf
+set n0 [$ns node]
+set n1 [$ns node]
+$ns duplex-link $n0 $n1 1Mb 10ms DropTail
+set tcp [new Agent/TCP]
+$tcp set window_ 4
+$ns attach-agent $n0 $tcp
+set sink [new Agent/TCPSink]
+$ns attach-agent $n1 $sink
+$ns connect $tcp $sink
+set ftp [ new Application/FTP]
+$ftp attach-agent $tcp
+$ns at 0.5 "$ftp start"
+$ns at 5.0 "finish"
+proc finish {} {
+global ns tf nf 
+$ns flush-trace 
+close $tf
+close $nf
+exec nam goback.nam &
+exit 0
+}
+$ns run
