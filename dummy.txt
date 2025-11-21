@@ -1,196 +1,75 @@
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import socket
+def port_scanner(ip, port):
+  try:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.settimeout(1)
+      s.connect((ip, port))
+      print(f"[+] Port {port} is open on {ip}")
+  except:
+    print(f"[-] Port {port} is closed on {ip}")
 
-class ChatServer {
-    static Set<PrintWriter> clients = new HashSet<>();
+ip = "127.0.0.1"
+for port in range(45, 50):
+  port_scanner(ip, port)
 
-    public static void main(String[] args) throws Exception {
-        ServerSocket ss = new ServerSocket(5000);
-        System.out.println("Server started...");
-        while (true) {
-            Socket s = ss.accept();
-            PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-            clients.add(out);
-            new Thread(() -> handleClient(s, out)).start();
-        }
-    }
+from datetime import datetime
+def capture():
+  while True:
+    message = input("Enter a message:\n")
+    if message.lower() == "exit":
+      print("Exited")
+      break
+    timestamp = datetime.now()
+    with open("keylog.txt", "a") as f:
+      f.write(f"[{timestamp}] [{message}]\n")
+    print(f"captured: {message}")
+capture()
 
-    static void handleClient(Socket s, PrintWriter out) {
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            String name = in.readLine();
-            broadcast(name + " joined the chat");
-            String msg;
-            while ((msg = in.readLine()) != null) {
-                if (msg.equalsIgnoreCase("/quit")) break;
-                broadcast(name + ": " + msg);
-            }
-        } catch (Exception ignored) {}
-        finally { clients.remove(out); broadcast("A user left."); }
-    }
+import random
+def generate_otp():
+  return str(random.randint(100000, 999999))
+username = input("Enter your username:\n")
+password = input("Enter your password:\n")
+print(f"{username} {password}")
+if password == "12345":
+  otp = generate_otp()
+  print(f"Your otp: {otp}")
+  user_otp = input("Enter your otp:\n")
+  if user_otp == otp:
+    print("Authentication completed\n")
+  else:
+    print("Authentication error\n")
+else:
+  print("invalid password")
 
-    static void broadcast(String msg) {
-        for (PrintWriter c : clients) c.println(msg);
-        System.out.println(msg);
-    }
-}
-import java.io.*;
-import java.net.*;
+import requests
+def check(url, param):
+  payload = f"{url}?{param}=' OR '1'='1"
+  print(f"Testing: {payload}")
+  try:
+    response = requests.get(payload, timeout = 5)
+    if response.status_code == 500 or "sql" in response.text.lower() or "syntax" in response.text.lower():
+      print(f"Potential Vulnerability at {payload}\n")
+    else:
+      print(f"Seems safe: {payload}")
+  except Exception as e:
+    print("Error")
 
-class ChatClient {
-    public static void main(String[] args) throws Exception {
-        Socket s = new Socket("localhost", 5000);
-        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-        BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
+check("https://example.com/login", "username")
 
-        System.out.print("Enter your name: ");
-        out.println(kb.readLine());
-        new Thread(() -> {
-            try { String line; while ((line = in.readLine()) != null) System.out.println(line); }
-            catch (Exception ignored) {}
-        }).start();
-
-        String msg;
-        while ((msg = kb.readLine()) != null) {
-            out.println(msg);
-            if (msg.equalsIgnoreCase("/quit")) break;
-        }
-        s.close();
-    }
-}
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-public class FileDownloader {
-    public static void main(String[] args) throws Exception {
-        String downloadUrl = "http://localhost:8000/download";
-        HttpURLConnection connection = (HttpURLConnection) new URL(downloadUrl).openConnection();
-
-        connection.setRequestMethod("GET");
-
-        try (InputStream in = connection.getInputStream();
-             FileOutputStream out = new FileOutputStream("downloaded.txt")) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-
-        System.out.println("File downloaded successfully!");
-    }
-}
-import com.sun.net.httpserver.*;
-import java.io.*;
-import java.net.*;
-
-public class FileServer {
-
-    private static final String UPLOAD_DIR = "uploads";
-
-    public static void main(String[] args) throws Exception {
-        File uploadDir = new File(UPLOAD_DIR);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdir();
-        }
-
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        System.out.println("Server started at http://localhost:8000");
-
-        server.createContext("/upload", new UploadHandler());
-        server.createContext("/download", new DownloadHandler());
-
-        server.setExecutor(null);
-        server.start();
-    }
-
-    // Handler for uploading files
-    static class UploadHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if ("POST".equals(exchange.getRequestMethod())) {
-                // Read file data
-                InputStream input = exchange.getRequestBody();
-                FileOutputStream fos = new FileOutputStream(UPLOAD_DIR + "/uploaded_file.txt");
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = input.read(buffer)) != -1) {
-                    fos.write(buffer, bytesRead, bytesRead);
-                }
-                fos.close();
-
-                String response = "File uploaded successfully!";
-                exchange.sendResponseHeaders(200, response.length());
-                OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
-                os.close();}
-            // } else {
-            //     String htmlForm = "<form method='POST' enctype='multipart/form-data' action='/upload'>" +
-            //             "<input type='file' name='file'><br><input type='submit' value='Upload'>" +
-            //             "</form>";
-            //     exchange.sendResponseHeaders(200, htmlForm.length());
-            //     OutputStream os = exchange.getResponseBody();
-            //     os.write(htmlForm.getBytes());
-            //     os.close();
-            // }
-        }
-    }
-
-    // Handler for downloading files
-    static class DownloadHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            File file = new File(UPLOAD_DIR + "/uploaded_file.txt");
-            if (file.exists()) {
-                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=download.txt");
-                exchange.sendResponseHeaders(200, file.length());
-
-                OutputStream os = exchange.getResponseBody();
-                FileInputStream fis = new FileInputStream(file);
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    os.write(buffer, 0, bytesRead);
-                }
-                fis.close();
-                os.close();}
-            // } else {
-            //     String response = "No file found!";
-            //     exchange.sendResponseHeaders(404, response.length());
-            //     OutputStream os = exchange.getResponseBody();
-            //     os.write(response.getBytes());
-            //     os.close();
-            // }
-        }
-    }
-}
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-public class FileUploader {
-    public static void main(String[] args) throws Exception {
-        File file = new File("test.txt");  // file to upload
-        String uploadUrl = "http://localhost:8000/upload";
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(uploadUrl).openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/octet-stream");
-
-        try (OutputStream os = connection.getOutputStream();
-             FileInputStream fis = new FileInputStream(file)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
-            }
-        }
-
-        int responseCode = connection.getResponseCode();
-        System.out.println("Upload Response: " + responseCode);
-    }
-}
+def caesar_cipher(mesage, shift, mode):
+  result = ""
+  for char in message:
+    if char.isalpha():
+      shift_base = 65 if char.isupper() else 97
+      shift_value = shift if mode == "encrypt" else -shift
+      result += chr((ord(char) - shift_base + shift_value) % 26 + shift_base)
+    else:
+      result += char
+  return result
+message = input("Enter a message:\n")
+shift = int(input("Enter a shift:\n"))
+encrypted = caesar_cipher(message, shift, "encrypt")
+print(f"Encryped message: {encrypted}\n")
+decrypted = caesar_cipher(message, shift, "decrypt")
+print(f"Decrypted message: {decrypted}\n")
